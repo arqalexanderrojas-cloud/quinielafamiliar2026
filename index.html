@@ -467,6 +467,8 @@ function buildMiniResumen(){
 // ─────────────────────────────────────────
 let datosQ = {};
 
+const FORMSPREE_URL = 'https://formspree.io/f/xbdwpyln';
+
 function enviarQuiniela(){
   const nombre = document.getElementById('nombre').value.trim();
   const err = document.getElementById('err-msg');
@@ -487,6 +489,36 @@ function enviarQuiniela(){
     scores,
     fecha: new Date().toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'})
   };
+
+  // Construir objeto plano para Formspree
+  const payload = { nombre: datosQ.nombre, apodo: datosQ.apodo, fecha: datosQ.fecha };
+  GRUPOS.forEach(g => {
+    pares(g).forEach((par,i)=>{
+      payload[`Grupo${g.id}_${par[0].n}_vs_${par[1].n}`] = scores[`${g.id}_${i}`];
+    });
+  });
+
+  // Enviar a Formspree en segundo plano
+  fetch(FORMSPREE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(r => {
+    const bar = document.getElementById('status-txt');
+    if(r.ok){
+      bar.textContent = '✓ Quiniela guardada correctamente';
+      bar.className = 'status ok';
+    } else {
+      bar.textContent = 'Hubo un problema al guardar — descarga tu PDF como respaldo';
+      bar.className = 'status err';
+    }
+  })
+  .catch(()=>{
+    const bar = document.getElementById('status-txt');
+    bar.textContent = 'Sin conexión — descarga tu PDF como respaldo';
+    bar.className = 'status err';
+  });
 
   mostrarResumen();
 }
