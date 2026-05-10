@@ -96,8 +96,8 @@ input[type=text]:focus,select:focus{border-color:var(--verde);box-shadow:0 0 0 3
 .btn-nueva{width:100%;padding:12px;background:transparent;color:var(--verde);border:1.5px solid var(--verde);border-radius:var(--r);font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;transition:background .2s}
 .btn-nueva:hover{background:var(--verde-claro)}
 
-/* PDF oculto */
-#pdf-root{display:none}
+/* PDF oculto fuera de pantalla */
+#pdf-root{position:fixed;left:-9999px;top:0;width:800px;background:#fff;z-index:-1;}
 </style>
 </head>
 <body>
@@ -180,53 +180,157 @@ input[type=text]:focus,select:focus{border-color:var(--verde);box-shadow:0 0 0 3
 // ─────────────────────────────────────────
 //  DATOS — 12 grupos, 6 partidos por grupo
 // ─────────────────────────────────────────
+// Partidos en orden cronológico con fecha y sede
+// cada partido: [equipoA, equipoB, fecha, sede]
 const GRUPOS = [
   { id:'A', equipos:[
-    {f:'🇲🇽',n:'México'},{f:'🇿🇦',n:'Sudáfrica'},{f:'🇰🇷',n:'Corea del Sur'},{f:'🇨🇿',n:'Chequia'}
-  ]},
+      {f:'🇲🇽',n:'México'},{f:'🇿🇦',n:'Sudáfrica'},{f:'🇰🇷',n:'Corea del Sur'},{f:'🇨🇿',n:'Rep. Checa'}
+    ],
+    partidos:[
+      [{f:'🇲🇽',n:'México'},      {f:'🇿🇦',n:'Sudáfrica'},     '11 Jun','Ciudad de México'],
+      [{f:'🇰🇷',n:'Corea del Sur'},{f:'🇨🇿',n:'Rep. Checa'},    '11 Jun','Guadalajara'],
+      [{f:'🇨🇿',n:'Rep. Checa'},  {f:'🇿🇦',n:'Sudáfrica'},     '18 Jun','Atlanta'],
+      [{f:'🇲🇽',n:'México'},      {f:'🇰🇷',n:'Corea del Sur'}, '18 Jun','Guadalajara'],
+      [{f:'🇲🇽',n:'México'},      {f:'🇨🇿',n:'Rep. Checa'},    '22 Jun','Ciudad de México'],
+      [{f:'🇿🇦',n:'Sudáfrica'},   {f:'🇰🇷',n:'Corea del Sur'}, '22 Jun','Monterrey'],
+    ]
+  },
   { id:'B', equipos:[
-    {f:'🇨🇦',n:'Canadá'},{f:'🇧🇦',n:'Bosnia'},{f:'🇶🇦',n:'Qatar'},{f:'🇨🇭',n:'Suiza'}
-  ]},
+      {f:'🇨🇦',n:'Canadá'},{f:'🇧🇦',n:'Bosnia/Her.'},{f:'🇶🇦',n:'Qatar'},{f:'🇨🇭',n:'Suiza'}
+    ],
+    partidos:[
+      [{f:'🇨🇦',n:'Canadá'},     {f:'🇧🇦',n:'Bosnia/Her.'}, '12 Jun','Toronto'],
+      [{f:'🇶🇦',n:'Qatar'},      {f:'🇨🇭',n:'Suiza'},       '13 Jun','San Francisco'],
+      [{f:'🇨🇭',n:'Suiza'},      {f:'🇧🇦',n:'Bosnia/Her.'}, '18 Jun','Los Ángeles'],
+      [{f:'🇨🇦',n:'Canadá'},     {f:'🇶🇦',n:'Qatar'},       '18 Jun','Vancouver'],
+      [{f:'🇨🇭',n:'Suiza'},      {f:'🇨🇦',n:'Canadá'},      '24 Jun','Vancouver'],
+      [{f:'🇧🇦',n:'Bosnia/Her.'},{f:'🇶🇦',n:'Qatar'},       '24 Jun','Seattle'],
+    ]
+  },
   { id:'C', equipos:[
-    {f:'🇧🇷',n:'Brasil'},{f:'🇲🇦',n:'Marruecos'},{f:'🇭🇹',n:'Haití'},{f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',n:'Escocia'}
-  ]},
+      {f:'🇧🇷',n:'Brasil'},{f:'🇲🇦',n:'Marruecos'},{f:'🇭🇹',n:'Haití'},{f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',n:'Escocia'}
+    ],
+    partidos:[
+      [{f:'🇧🇷',n:'Brasil'},    {f:'🇲🇦',n:'Marruecos'}, '13 Jun','Nueva York'],
+      [{f:'🇭🇹',n:'Haití'},     {f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',n:'Escocia'},  '13 Jun','Filadelfia'],
+      [{f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',n:'Escocia'},  {f:'🇲🇦',n:'Marruecos'}, '19 Jun','Boston'],
+      [{f:'🇧🇷',n:'Brasil'},    {f:'🇭🇹',n:'Haití'},     '19 Jun','Filadelfia'],
+      [{f:'🇲🇦',n:'Marruecos'},{f:'🇭🇹',n:'Haití'},     '24 Jun','Atlanta'],
+      [{f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',n:'Escocia'},  {f:'🇧🇷',n:'Brasil'},    '24 Jun','Miami'],
+    ]
+  },
   { id:'D', equipos:[
-    {f:'🇺🇸',n:'EE.UU.'},{f:'🇵🇾',n:'Paraguay'},{f:'🇹🇷',n:'Turquía'},{f:'🇵🇦',n:'Panamá'}
-  ]},
+      {f:'🇺🇸',n:'EE.UU.'},{f:'🇵🇾',n:'Paraguay'},{f:'🇦🇺',n:'Australia'},{f:'🇹🇷',n:'Turquía'}
+    ],
+    partidos:[
+      [{f:'🇺🇸',n:'EE.UU.'},    {f:'🇵🇾',n:'Paraguay'}, '12 Jun','Los Ángeles'],
+      [{f:'🇦🇺',n:'Australia'}, {f:'🇹🇷',n:'Turquía'},  '13 Jun','Vancouver'],
+      [{f:'🇺🇸',n:'EE.UU.'},    {f:'🇦🇺',n:'Australia'},'19 Jun','Seattle'],
+      [{f:'🇹🇷',n:'Turquía'},   {f:'🇵🇾',n:'Paraguay'}, '19 Jun','San Francisco'],
+      [{f:'🇵🇾',n:'Paraguay'},  {f:'🇦🇺',n:'Australia'},'25 Jun','Kansas City'],
+      [{f:'🇹🇷',n:'Turquía'},   {f:'🇺🇸',n:'EE.UU.'},  '25 Jun','Dallas'],
+    ]
+  },
   { id:'E', equipos:[
-    {f:'🇩🇪',n:'Alemania'},{f:'🇯🇵',n:'Japón'},{f:'🇪🇨',n:'Ecuador'},{f:'🇿🇲',n:'Zambia'}
-  ]},
+      {f:'🇩🇪',n:'Alemania'},{f:'🇨🇼',n:'Curazao'},{f:'🇨🇮',n:'Costa de Marfil'},{f:'🇪🇨',n:'Ecuador'}
+    ],
+    partidos:[
+      [{f:'🇩🇪',n:'Alemania'},        {f:'🇨🇼',n:'Curazao'},        '14 Jun','Houston'],
+      [{f:'🇨🇮',n:'Costa de Marfil'}, {f:'🇪🇨',n:'Ecuador'},        '14 Jun','Filadelfia'],
+      [{f:'🇩🇪',n:'Alemania'},        {f:'🇨🇮',n:'Costa de Marfil'},'20 Jun','Toronto'],
+      [{f:'🇪🇨',n:'Ecuador'},         {f:'🇨🇼',n:'Curazao'},        '20 Jun','Kansas City'],
+      [{f:'🇩🇪',n:'Alemania'},        {f:'🇪🇨',n:'Ecuador'},        '25 Jun','Houston'],
+      [{f:'🇨🇼',n:'Curazao'},         {f:'🇨🇮',n:'Costa de Marfil'},'25 Jun','Filadelfia'],
+    ]
+  },
   { id:'F', equipos:[
-    {f:'🇳🇱',n:'Países Bajos'},{f:'🇸🇪',n:'Suecia'},{f:'🇸🇳',n:'Senegal'},{f:'🇮🇷',n:'Irán'}
-  ]},
+      {f:'🇳🇱',n:'Países Bajos'},{f:'🇯🇵',n:'Japón'},{f:'🇸🇪',n:'Suecia'},{f:'🇹🇳',n:'Túnez'}
+    ],
+    partidos:[
+      [{f:'🇳🇱',n:'Países Bajos'},{f:'🇯🇵',n:'Japón'},        '14 Jun','Dallas'],
+      [{f:'🇸🇪',n:'Suecia'},     {f:'🇹🇳',n:'Túnez'},        '14 Jun','Monterrey'],
+      [{f:'🇳🇱',n:'Países Bajos'},{f:'🇸🇪',n:'Suecia'},       '20 Jun','Houston'],
+      [{f:'🇹🇳',n:'Túnez'},      {f:'🇯🇵',n:'Japón'},        '20 Jun','Monterrey'],
+      [{f:'🇳🇱',n:'Países Bajos'},{f:'🇹🇳',n:'Túnez'},       '25 Jun','Dallas'],
+      [{f:'🇯🇵',n:'Japón'},      {f:'🇸🇪',n:'Suecia'},       '25 Jun','Los Ángeles'],
+    ]
+  },
   { id:'G', equipos:[
-    {f:'🇧🇪',n:'Bélgica'},{f:'🇪🇬',n:'Egipto'},{f:'🇳🇴',n:'Noruega'},{f:'🇳🇿',n:'Nueva Zelanda'}
-  ]},
+      {f:'🇧🇪',n:'Bélgica'},{f:'🇪🇬',n:'Egipto'},{f:'🇮🇷',n:'Irán'},{f:'🇳🇿',n:'Nueva Zelanda'}
+    ],
+    partidos:[
+      [{f:'🇧🇪',n:'Bélgica'},        {f:'🇪🇬',n:'Egipto'},        '15 Jun','Seattle'],
+      [{f:'🇮🇷',n:'Irán'},           {f:'🇳🇿',n:'Nueva Zelanda'}, '15 Jun','Los Ángeles'],
+      [{f:'🇧🇪',n:'Bélgica'},        {f:'🇮🇷',n:'Irán'},          '21 Jun','Los Ángeles'],
+      [{f:'🇳🇿',n:'Nueva Zelanda'}, {f:'🇪🇬',n:'Egipto'},        '21 Jun','Vancouver'],
+      [{f:'🇧🇪',n:'Bélgica'},        {f:'🇳🇿',n:'Nueva Zelanda'}, '26 Jun','Seattle'],
+      [{f:'🇪🇬',n:'Egipto'},         {f:'🇮🇷',n:'Irán'},          '26 Jun','Los Ángeles'],
+    ]
+  },
   { id:'H', equipos:[
-    {f:'🇪🇸',n:'España'},{f:'🇺🇾',n:'Uruguay'},{f:'🇸🇦',n:'Arabia Saudita'},{f:'🇨🇻',n:'Cabo Verde'}
-  ]},
+      {f:'🇪🇸',n:'España'},{f:'🇨🇻',n:'Cabo Verde'},{f:'🇸🇦',n:'Arabia Saudí'},{f:'🇺🇾',n:'Uruguay'}
+    ],
+    partidos:[
+      [{f:'🇪🇸',n:'España'},     {f:'🇨🇻',n:'Cabo Verde'},   '15 Jun','Atlanta'],
+      [{f:'🇸🇦',n:'Arabia Saudí'},{f:'🇺🇾',n:'Uruguay'},     '15 Jun','Miami'],
+      [{f:'🇪🇸',n:'España'},     {f:'🇸🇦',n:'Arabia Saudí'}, '21 Jun','Atlanta'],
+      [{f:'🇺🇾',n:'Uruguay'},    {f:'🇨🇻',n:'Cabo Verde'},   '21 Jun','Miami'],
+      [{f:'🇪🇸',n:'España'},     {f:'🇺🇾',n:'Uruguay'},      '26 Jun','Miami'],
+      [{f:'🇨🇻',n:'Cabo Verde'}, {f:'🇸🇦',n:'Arabia Saudí'}, '26 Jun','Atlanta'],
+    ]
+  },
   { id:'I', equipos:[
-    {f:'🇫🇷',n:'Francia'},{f:'🇳🇴',n:'Noruega'},{f:'🇦🇺',n:'Australia'},{f:'🇨🇮',n:'Costa de Marfil'}
-  ]},
+      {f:'🇫🇷',n:'Francia'},{f:'🇸🇳',n:'Senegal'},{f:'🇮🇶',n:'Irak'},{f:'🇳🇴',n:'Noruega'}
+    ],
+    partidos:[
+      [{f:'🇫🇷',n:'Francia'},  {f:'🇸🇳',n:'Senegal'}, '16 Jun','Nueva York'],
+      [{f:'🇮🇶',n:'Irak'},     {f:'🇳🇴',n:'Noruega'}, '16 Jun','Boston'],
+      [{f:'🇫🇷',n:'Francia'},  {f:'🇮🇶',n:'Irak'},    '22 Jun','Filadelfia'],
+      [{f:'🇳🇴',n:'Noruega'},  {f:'🇸🇳',n:'Senegal'}, '22 Jun','Nueva York'],
+      [{f:'🇫🇷',n:'Francia'},  {f:'🇳🇴',n:'Noruega'}, '26 Jun','Nueva York'],
+      [{f:'🇸🇳',n:'Senegal'},  {f:'🇮🇶',n:'Irak'},    '26 Jun','Boston'],
+    ]
+  },
   { id:'J', equipos:[
-    {f:'🇦🇷',n:'Argentina'},{f:'🇩🇿',n:'Argelia'},{f:'🇦🇹',n:'Austria'},{f:'🇯🇴',n:'Jordania'}
-  ]},
+      {f:'🇦🇷',n:'Argentina'},{f:'🇩🇿',n:'Argelia'},{f:'🇦🇹',n:'Austria'},{f:'🇯🇴',n:'Jordania'}
+    ],
+    partidos:[
+      [{f:'🇦🇷',n:'Argentina'},{f:'🇩🇿',n:'Argelia'},  '16 Jun','Kansas City'],
+      [{f:'🇦🇹',n:'Austria'},  {f:'🇯🇴',n:'Jordania'}, '16 Jun','San Francisco'],
+      [{f:'🇦🇷',n:'Argentina'},{f:'🇦🇹',n:'Austria'},  '22 Jun','Dallas'],
+      [{f:'🇯🇴',n:'Jordania'}, {f:'🇩🇿',n:'Argelia'},  '22 Jun','San Francisco'],
+      [{f:'🇦🇷',n:'Argentina'},{f:'🇯🇴',n:'Jordania'}, '27 Jun','Dallas'],
+      [{f:'🇩🇿',n:'Argelia'},  {f:'🇦🇹',n:'Austria'},  '27 Jun','Kansas City'],
+    ]
+  },
   { id:'K', equipos:[
-    {f:'🇵🇹',n:'Portugal'},{f:'🇨🇴',n:'Colombia'},{f:'🇺🇿',n:'Uzbekistán'},{f:'🇹🇳',n:'Túnez'}
-  ]},
+      {f:'🇵🇹',n:'Portugal'},{f:'🇨🇩',n:'RD Congo'},{f:'🇺🇿',n:'Uzbekistán'},{f:'🇨🇴',n:'Colombia'}
+    ],
+    partidos:[
+      [{f:'🇵🇹',n:'Portugal'},   {f:'🇨🇩',n:'RD Congo'},    '17 Jun','Houston'],
+      [{f:'🇺🇿',n:'Uzbekistán'}, {f:'🇨🇴',n:'Colombia'},    '17 Jun','Ciudad de México'],
+      [{f:'🇵🇹',n:'Portugal'},   {f:'🇺🇿',n:'Uzbekistán'},  '23 Jun','Houston'],
+      [{f:'🇨🇴',n:'Colombia'},   {f:'🇨🇩',n:'RD Congo'},    '23 Jun','Guadalajara'],
+      [{f:'🇵🇹',n:'Portugal'},   {f:'🇨🇴',n:'Colombia'},    '27 Jun','Miami'],
+      [{f:'🇨🇩',n:'RD Congo'},   {f:'🇺🇿',n:'Uzbekistán'},  '27 Jun','Atlanta'],
+    ]
+  },
   { id:'L', equipos:[
-    {f:'🇬🇧',n:'Inglaterra'},{f:'🇭🇷',n:'Croacia'},{f:'🇬🇭',n:'Ghana'},{f:'🇮🇶',n:'Irak'}
-  ]}
+      {f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',n:'Inglaterra'},{f:'🇭🇷',n:'Croacia'},{f:'🇬🇭',n:'Ghana'},{f:'🇵🇦',n:'Panamá'}
+    ],
+    partidos:[
+      [{f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',n:'Inglaterra'},{f:'🇭🇷',n:'Croacia'}, '17 Jun','Dallas'],
+      [{f:'🇬🇭',n:'Ghana'},     {f:'🇵🇦',n:'Panamá'},   '17 Jun','Toronto'],
+      [{f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',n:'Inglaterra'},{f:'🇬🇭',n:'Ghana'},   '23 Jun','Boston'],
+      [{f:'🇵🇦',n:'Panamá'},    {f:'🇭🇷',n:'Croacia'},  '23 Jun','Toronto'],
+      [{f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',n:'Inglaterra'},{f:'🇵🇦',n:'Panamá'},  '27 Jun','Nueva York'],
+      [{f:'🇭🇷',n:'Croacia'},   {f:'🇬🇭',n:'Ghana'},    '27 Jun','Filadelfia'],
+    ]
+  }
 ];
 
-// Genera los 6 pares de cada grupo (round-robin)
-function pares(equipos){
-  const r=[];
-  for(let i=0;i<equipos.length;i++)
-    for(let j=i+1;j<equipos.length;j++)
-      r.push([equipos[i],equipos[j]]);
-  return r;
-}
+// Usa los partidos predefinidos del grupo (ya en orden cronológico)
+function pares(g){ return g.partidos; }
 
 // Estado global de scores: key = "A_0_a" → goles
 const S = {};
@@ -259,14 +363,14 @@ GRUPOS.forEach(g => {
   div.className = 'sec-panel';
   div.style.display = 'none';
 
-  const matches = pares(g.equipos);
+  const matches = pares(g);
   let html = `<div class="card"><div class="card-title">Grupo ${g.id} &mdash; ${g.equipos.map(e=>e.n).join(' · ')}</div>`;
 
   matches.forEach((par, idx) => {
     const ka = `${g.id}_${idx}_a`, kb = `${g.id}_${idx}_b`;
     html += `
     <div class="match-block">
-      <div class="match-meta">Partido ${idx+1}</div>
+      <div class="match-meta">Jornada ${idx < 2 ? 1 : idx < 4 ? 2 : 3} &nbsp;·&nbsp; <span>${par[2]} · ${par[3]}</span></div>
       <div class="match-row">
         <div class="team-side">
           <span class="flag">${par[0].f}</span>
@@ -346,7 +450,7 @@ function buildMiniResumen(){
     : `<span style="color:var(--rojo)">⚠️ Falta tu nombre (ve a la pestaña Datos)</span><br><br>`;
 
   GRUPOS.forEach(g => {
-    const matches = pares(g.equipos);
+    const matches = pares(g);
     html += `<span style="color:var(--verde);font-weight:700">Grupo ${g.id}:</span> `;
     html += matches.map((par,i)=>{
       const a=getNum(`${g.id}_${i}_a`), b=getNum(`${g.id}_${i}_b`);
@@ -372,7 +476,7 @@ function enviarQuiniela(){
   // Recopilar todos los scores
   const scores = {};
   GRUPOS.forEach(g => {
-    pares(g.equipos).forEach((_,i)=>{
+    pares(g).forEach((_,i)=>{
       scores[`${g.id}_${i}`] = `${getNum(`${g.id}_${i}_a`)}-${getNum(`${g.id}_${i}_b`)}`;
     });
   });
@@ -398,11 +502,14 @@ function mostrarResumen(){
   let html = '';
   GRUPOS.forEach(g => {
     html += `<div class="res-grupo-title">Grupo ${g.id} — ${g.equipos.map(e=>e.n).join(' · ')}</div>`;
-    pares(g.equipos).forEach((par,i)=>{
+    pares(g).forEach((par,i)=>{
       const sc = d.scores[`${g.id}_${i}`];
       html += `<div class="res-partido">
         <div class="rp-eq">${par[0].f} ${par[0].n}</div>
-        <div class="rp-score">${sc}</div>
+        <div style="text-align:center">
+          <div class="rp-score">${sc}</div>
+          <div style="font-size:10px;color:#aaa;margin-top:3px">${par[2]}</div>
+        </div>
         <div class="rp-eq r">${par[1].n} ${par[1].f}</div>
       </div>`;
     });
@@ -434,14 +541,16 @@ function descargarPDF(){
                   color:#006847;padding:8px 0 4px;border-top:1px solid #e0e0e0;margin-top:4px">
         Grupo ${g.id} — ${g.equipos.map(e=>e.n).join(' · ')}
       </div>`;
-    pares(g.equipos).forEach((par,i)=>{
+    pares(g).forEach((par,i)=>{
       const sc = d.scores[`${g.id}_${i}`];
       partidosHtml += `
         <div style="display:flex;justify-content:space-between;align-items:center;
                     padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:12px">
           <span style="font-weight:600">${par[0].f} ${par[0].n}</span>
           <span style="font-weight:700;color:#006847;background:#e6f4ef;
-                       padding:2px 10px;border-radius:6px">${sc}</span>
+                       padding:2px 10px;border-radius:6px;text-align:center;min-width:70px">
+            ${sc}<br><span style="font-size:9px;font-weight:400;color:#888">${par[2]} · ${par[3]}</span>
+          </span>
           <span style="font-weight:600;text-align:right">${par[1].n} ${par[1].f}</span>
         </div>`;
     });
@@ -465,7 +574,6 @@ function descargarPDF(){
 
   const root = document.getElementById('pdf-root');
   root.innerHTML = pdfHtml;
-  root.style.display = 'block';
 
   html2pdf().set({
     margin: 6,
@@ -473,7 +581,7 @@ function descargarPDF(){
     image: { type:'jpeg', quality:0.97 },
     html2canvas: { scale:2, useCORS:true, logging:false },
     jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
-  }).from(root).save().then(()=>{ root.style.display='none'; });
+  }).from(root).save();
 }
 </script>
 </body>
